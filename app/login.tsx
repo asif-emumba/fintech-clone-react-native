@@ -4,17 +4,57 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import { defaultStyles } from "@/constants/Styles";
 import Colors from "@/constants/Colors";
-import { Ionicons } from "@expo/vector-icons";
-import SignInController from "@/Controller/SigninController";
 import SignInButton from "@/components/SignInButton";
-
+import { useRouter } from "expo-router";
+import { isClerkAPIResponseError, useSignIn } from "@clerk/clerk-expo";
+enum SignInTypes {
+  Phone,
+  Email,
+  Apple,
+  Google,
+}
 const LoginPage = () => {
-  const { countryCode, phoneNumber, setPhoneNumber, onSingnIn, SignInTypes } =
-    SignInController();
+  const [countryCode, setCountryCode] = useState("+79");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const router = useRouter();
+  const { signIn } = useSignIn();
+  // Sign in function
+  const onSingnIn = async (type: SignInTypes) => {
+    if (type === SignInTypes.Phone) {
+      try {
+        const fullPhoneNumber = `${countryCode}${phoneNumber}`;
+        const { supportedFirstFactors } = await signIn!.create({
+          identifier: fullPhoneNumber,
+        });
+        const firstPhoneFactor: any = supportedFirstFactors?.find(
+          (factor: any) => {
+            return factor.strategy === "phone_code";
+          }
+        );
+        const { phoneNumberId } = firstPhoneFactor;
+        await signIn!.prepareFirstFactor({
+          strategy: "phone_code",
+          phoneNumberId,
+        });
+        router.push({
+          pathname: "/verify/[phone]",
+          params: { phone: fullPhoneNumber, signin: "true" },
+        });
+      } catch (err) {
+        console.log(err, JSON.stringify(err, null, 2));
+        if (isClerkAPIResponseError(err)) {
+          if (err.errors[0].code === "form_identifier_not_found") {
+            Alert.alert("Phone number not found");
+          }
+        }
+      }
+    }
+  };
   return (
     <View style={defaultStyles.container}>
       <Text style={defaultStyles.header}>Welcome back!</Text>

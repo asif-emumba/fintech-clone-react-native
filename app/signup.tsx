@@ -5,15 +5,33 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React from "react";
 import { defaultStyles } from "@/constants/Styles";
 import Colors from "@/constants/Colors";
 import { Link } from "expo-router";
-import useSignupHook from "@/Controller/SignupController";
+import React, { useState } from "react";
+import { useRouter } from "expo-router";
+import { useSignUp } from "@clerk/clerk-expo";
 
 const SignupPage = () => {
-  const { countryCode, phoneNumber, setPhoneNumber, onSignup } =
-    useSignupHook();
+  const [countryCode, setCountryCode] = useState("+55");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const router = useRouter();
+  const { signUp } = useSignUp();
+  // Sign up function
+  const onSignup = async () => {
+    const fullPhoneNumber = `${countryCode}${phoneNumber}`;
+    console.log(fullPhoneNumber);
+    try {
+      await signUp!.create({ phoneNumber: fullPhoneNumber });
+      signUp!.preparePhoneNumberVerification();
+      router.push({
+        pathname: "/verify/[phone]",
+        params: { phone: fullPhoneNumber },
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
   return (
     <View style={defaultStyles.container}>
       <Text style={defaultStyles.header}>Let's get started!</Text>

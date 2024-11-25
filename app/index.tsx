@@ -2,12 +2,21 @@ import { StyleSheet, Text, View } from "react-native";
 import React from "react";
 import { VideoView } from "expo-video";
 import Colors from "@/constants/Colors";
-import IndexController from "@/Controller/IndexController";
 import LinkButton from "@/components/LinkButton";
+import { useVideoPlayer } from "expo-video";
+import { useEffect } from "react";
 
 const HomePage = () => {
-  // controller logic
-  const { player1, assets } = IndexController();
+  const assets = require("@/assets/videos/intro.mp4");
+  const player1 = useVideoPlayer(assets);
+  //   to play video when view is mounted
+  useEffect(() => {
+    if (player1) {
+      console.log("playing video------------------->");
+      player1.play();
+      player1.loop = true;
+    }
+  }, [player1]);
   return (
     <View style={styles.container}>
       {assets && (
